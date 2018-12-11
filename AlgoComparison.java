@@ -1,3 +1,4 @@
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
@@ -6,10 +7,11 @@ import java.util.*;
 import java.awt.*;
 
 public class AlgoComparison {
+
 	public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
 		PrintWriter writer = new PrintWriter("PATest.txt", "UTF-8");
 		writer.println("outBFS,outBi,Dij");
-		String location = "/Users/jarredparrett/desktop/GRAPH_DATA/USA-road-d.NY.gr";
+		String location = "/Users/parrettj/Desktop/USA-road-d.NY.gr";
 		Scanner sc = new Scanner(new File(location));
 		String line0 = sc.nextLine();// c 9th DIMACS Implementation Challenge: Shortest Paths
 		String line1 = sc.nextLine();// c 9th DIMACS Implementation Challenge: Shortest Paths
@@ -29,7 +31,7 @@ public class AlgoComparison {
 			int val = Integer.parseInt(line_S[3]);
 			searchSpace.addEdge(source, dest, val);
 		}
-		String location_lat = "/Users/jarredparrett/desktop/GRAPH_DATA/USA-road-d.NY.co";
+		String location_lat = "/Users/parrettj/Desktop/USA-road-d.NY.co";
 		Scanner sc2 = new Scanner(new File(location_lat));
 		String line_0 = sc2.nextLine();// c 9th DIMACS Implementation Challenge: Shortest Paths
 		String line_1 = sc2.nextLine();// c 9th DIMACS Implementation Challenge: Shortest Paths
@@ -61,8 +63,12 @@ public class AlgoComparison {
 			System.out.println("End " + end);
 			long[] outBFS = breathFirstSearch(start, end, searchSpace);
 			long[] outBi = biDirectionalSearch(start, end, searchSpace);
-			long outDij = dij[end];
-			System.out.println(outBFS[0] + " " + outBi[0] + " " + outDij);
+			//long outDij = dij[end];
+			System.out.println("Out BFS 0 " + outBFS[0] + " Out BFS 1 " + outBFS[1] + " \nOut Bi 0 " + outBi[0]
+					+ " Out Bi 1 " + outBi[1]);
+			long[] outA = aStarGraphSearch(start, end, searchSpace, pointLocations);
+			System.out.println("Astar 0 " + outA[0] + " Astar 1 " + outA[1] + " Astar 2 " + outA[2]);
+			// System.out.println(outA[0]);
 		}
 
 		writer.close();
@@ -77,6 +83,7 @@ public class AlgoComparison {
 	 * @return
 	 */
 	static long[] breathFirstSearch(int start, int destination, WeightedGraph.Graph searchSpace) {
+		HashSet<Integer> visitedCheck = new HashSet<Integer>();
 		long expanded = 0;
 		long explored = 1;
 		long[] output = new long[10];
@@ -89,12 +96,16 @@ public class AlgoComparison {
 			expanded++;
 			Iterator<WeightedGraph.Edge> i = searchSpace.adjList[start].listIterator();
 			while (i.hasNext()) {
-				explored++;
 				WeightedGraph.Edge next = i.next();
+				if(visitedCheck.contains(next.destination)) {
+					continue;
+				}
+				explored++;
 				int n = next.destination;
 				if (!visited[n]) {
 					visited[n] = true;
 					q.add(n);
+					visitedCheck.add(n);
 				}
 				if (next.destination == destination) {
 					output[0] = expanded;
@@ -116,6 +127,8 @@ public class AlgoComparison {
 	 * @return
 	 */
 	static long[] biDirectionalSearch(int start, int destination, WeightedGraph.Graph searchSpace) {
+		HashSet<Integer> visitedStartCheck = new HashSet<Integer>();
+		HashSet<Integer> visitedDestCheck = new HashSet<Integer>();
 		long expanded = 0;
 		long explored = 1;
 		long[] output = new long[10];
@@ -133,13 +146,16 @@ public class AlgoComparison {
 			expanded++;
 			Iterator<WeightedGraph.Edge> i = searchSpace.adjList[begin].listIterator();
 			while (i.hasNext()) {
-				explored++;
 				WeightedGraph.Edge next = i.next();
+				if(visitedStartCheck.contains(next.destination)) {
+					continue;
+				}
+				explored++;
 				int n = next.destination;
 				if (!visitedStart[n]) {
 					visitedStart[n] = true;
-					output[1]++;
 					startQ.add(n);
+					visitedStartCheck.add(next.destination);
 				}
 
 			}
@@ -148,23 +164,27 @@ public class AlgoComparison {
 			expanded++;
 			Iterator<WeightedGraph.Edge> j = searchSpace.adjList[dest].listIterator();
 			while (j.hasNext()) {
-				explored++;
 				WeightedGraph.Edge next = j.next();
+				if(visitedDestCheck.contains(next.destination)) {
+					continue;
+				}
+				explored++;
 				int n = next.destination;
 				output[2] = output[2] + next.weight;
 				if (!visitedDest[n]) {
 					visitedDest[n] = true;
-					output[1]++;
 					destQ.add(n);
+					visitedDestCheck.add(next.destination);
 				}
 
 			}
-			for (int k = 0; k < startQ.size(); k++) {
-				if (visitedStart[k] == true && visitedStart[k] == true) {
+			for (int k = 0; k < visitedStart.length; k++) {
+				if (visitedStart[k] == true && visitedDest[k] == true) {
 					output[0] = expanded;
 					output[1] = explored;
 					return output;
 				}
+				
 			}
 
 		}
@@ -180,6 +200,7 @@ public class AlgoComparison {
 	 * @return
 	 */
 	static long[] dijkstraGraphSearch(int start, int destination, WeightedGraph.Graph searchSpace) {
+		//add visited 
 		long minEdge[] = new long[searchSpace.verticies];
 		for (int i = 0; i < minEdge.length; i++) {
 			minEdge[i] = Integer.MAX_VALUE;
@@ -193,8 +214,8 @@ public class AlgoComparison {
 			Iterator<WeightedGraph.Edge> i = searchSpace.adjList[cur.node].listIterator();
 			while (i.hasNext()) {
 				WeightedGraph.Edge curEdge = i.next();
-				long pathDist =  curEdge.weight + minEdge[curEdge.source];
-				if (cur.getLengthOfPath() < minEdge[curEdge.destination]) {
+				long pathDist = curEdge.weight + minEdge[curEdge.source];
+				if (pathDist < minEdge[curEdge.destination]) {
 					minEdge[curEdge.destination] = pathDist;
 				}
 				pq.add(new Vertex(curEdge.destination, minEdge[curEdge.destination], cur));
@@ -203,34 +224,127 @@ public class AlgoComparison {
 		return minEdge;
 	}
 
-	// A* with straight line distance
-
-	static long[] aStarGraphSearch(int start, int end, WeightedGraph.Graph searchSpace, Point[] pointLocations) {
-		long minEdge[] = new long[searchSpace.verticies+1];
+	/**
+	 * aStarGraphSearch
+	 */
+	static long[] aStarGraphSearch(int start, int destination, WeightedGraph.Graph searchSpace,
+			Point[] pointLocations) {
+		HashSet<Integer> visited = new HashSet<Integer>();
+		long expanded = 0;
+		long explored = 1;
+		long minEdge[] = new long[searchSpace.verticies + 1];
+		for (int i = 0; i < minEdge.length; i++) {
+			minEdge[i] = Integer.MAX_VALUE;
+		}
 		minEdge[start] = 0;
 		long[] output = new long[10];
 		PriorityQueue<VertexA> pq = new PriorityQueue<VertexA>();
-		double distance = longLatDist(pointLocations[start], pointLocations[end], "K");
-		VertexA sVert = new VertexA(start, distance,  null);
+		double distance = longLatDist(pointLocations[start], pointLocations[destination], "K");
+		VertexA sVert = new VertexA(start, distance, null);
 		pq.add(sVert);
-		while(pq.size() !=0) {
+		while (pq.size() != 0) {
 			VertexA cur = pq.poll();
+			expanded++;
 			Iterator<WeightedGraph.Edge> i = searchSpace.adjList[cur.node].listIterator();
-			while(i.hasNext()) {
+			while (i.hasNext()) {
 				WeightedGraph.Edge curEdge = i.next();
-				double newDist =  longLatDist(pointLocations[curEdge.destination], pointLocations[end], "K");
-				long pathDist =  curEdge.weight + minEdge[curEdge.source];
+				if (visited.contains(curEdge.destination)) {
+					continue;
+				}
+				explored++;
+				double newDist = longLatDist(pointLocations[curEdge.destination], pointLocations[destination], "K");
+				if (newDist == Double.NaN) {
+					newDist = 100;//resolve this
+				}
+				long pathDist = curEdge.weight + minEdge[curEdge.source];
 				minEdge[curEdge.destination] = pathDist;
-				double value = newDist+pathDist;
+				double value = newDist + pathDist;
 				pq.add(new VertexA(curEdge.destination, value, cur));
+				visited.add(curEdge.destination);
+
+			}
+			if (minEdge[destination] != Integer.MAX_VALUE) {
+				output[0] = expanded;
+				output[1] = explored;
+				output[2] = minEdge[destination];
+				return output;
 			}
 		}
-		
-		
-		
 		return null;
 	}
 
+	/**
+	 * aStarGraphSearch
+	 */
+	static long[] aStarGraphSearchBi(int start, int destination, WeightedGraph.Graph searchSpace,
+			Point[] pointLocations) {
+		long minEdgeFromStart[] = new long[searchSpace.verticies + 1];
+		for (int i = 0; i < minEdgeFromStart.length; i++) {
+			minEdgeFromStart[i] = Integer.MAX_VALUE;
+		}
+		long minEdgeFromDest[] = new long[searchSpace.verticies + 1];
+		for (int i = 0; i < minEdgeFromDest.length; i++) {
+			minEdgeFromDest[i] = Integer.MAX_VALUE;
+		}
+		boolean visitedStart[] = new boolean[searchSpace.verticies - 1];
+		boolean visitedDest[] = new boolean[searchSpace.verticies - 1];
+		PriorityQueue<VertexA> pqStart = new PriorityQueue<VertexA>();
+		PriorityQueue<VertexA> pqDest = new PriorityQueue<VertexA>();
+		long[] output = new long[10];
+		double distance = longLatDist(pointLocations[start], pointLocations[destination], "K");
+
+		VertexA sVert = new VertexA(start, distance, null);
+		VertexA dVert = new VertexA(destination, distance, null);
+
+		pqStart.add(sVert);
+		pqDest.add(dVert);
+
+		visitedStart[start] = true;
+		visitedDest[destination] = true;
+
+		while (pqStart.size() != 0 && pqDest.size() != 0) {
+			// start aStarGraph
+			VertexA curStart = pqStart.poll();
+			Iterator<WeightedGraph.Edge> i = searchSpace.adjList[curStart.node].listIterator();
+			while (i.hasNext()) {
+				WeightedGraph.Edge curEdge = i.next();
+				double newDist = longLatDist(pointLocations[curEdge.destination], pointLocations[destination], "K");
+				long pathDist = curEdge.weight + minEdgeFromStart[curEdge.source];
+				minEdgeFromStart[curEdge.destination] = pathDist;
+				double value = newDist + pathDist;
+				if (!visitedStart[curEdge.destination]) {
+					visitedStart[curEdge.destination] = true;
+					pqStart.add(new VertexA(curEdge.destination, value, curStart));
+				}
+			}
+
+			VertexA curDest = pqDest.poll();
+			Iterator<WeightedGraph.Edge> i2 = searchSpace.adjList[curDest.node].listIterator();
+			while (i2.hasNext()) {
+				WeightedGraph.Edge curEdge = i2.next();
+				double newDist = longLatDist(pointLocations[curEdge.destination], pointLocations[start], "K");
+				long pathDist = curEdge.weight + minEdgeFromDest[curEdge.source];
+				minEdgeFromDest[curEdge.destination] = pathDist;
+				double value = newDist + pathDist;
+				if (!visitedDest[curEdge.destination]) {
+					visitedDest[curEdge.destination] = true;
+					pqStart.add(new VertexA(curEdge.destination, value, curStart));
+				}
+			}
+			for (int k = 0; k < visitedStart.length; k++) {
+				if (visitedStart[k] == true && visitedStart[k] == true) {
+					output[0] = -1;
+					output[1] = -1;
+					return output;
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Coordinate Distance
+	 */
 	static double longLatDist(Point p1, Point p2, String unit) {
 		double theta = p1.x - p2.x;
 		double dist = Math.sin(deg2rad(p1.y)) * Math.sin(deg2rad(p1.y))
@@ -336,20 +450,20 @@ public class AlgoComparison {
 			long outVal = this.distance;
 			Vertex curParent = this.parent;
 			while (curParent != null) {
-				outVal =+ parent.distance;
+				outVal = +parent.distance;
 				curParent = curParent.parent;
 			}
 			return outVal;
 		}
 	}
-	
+
 	/**
 	 * Vertex class for Dijsktra
 	 * 
 	 * @author jarredparrett
 	 *
 	 */
-	static class VertexA implements Comparable<Vertex> {
+	static class VertexA implements Comparable<VertexA> {
 		int node;
 		double distance;
 		VertexA parent;
@@ -360,7 +474,7 @@ public class AlgoComparison {
 			this.parent = parent;
 		}
 
-		public int compareTo(Vertex o) {
+		public int compareTo(VertexA o) {
 			if (o.distance < distance) {
 				return 1;
 			} else if (this.distance > o.distance) {
@@ -374,7 +488,7 @@ public class AlgoComparison {
 			double outVal = this.distance;
 			VertexA curParent = this.parent;
 			while (curParent != null) {
-				outVal =+ parent.distance;
+				outVal = +parent.distance;
 				curParent = curParent.parent;
 			}
 			return outVal;
