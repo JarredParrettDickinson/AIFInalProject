@@ -11,7 +11,7 @@ public class AlgoComparison {
 	public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
 		PrintWriter writer = new PrintWriter("PATest.txt", "UTF-8");
 		writer.println("outBFS,outBi,Dij");
-		String location = "/Users/jarredparrett/Desktop/USA-road-d.NY.gr";
+		String location = "/Users/jarredparrett/Desktop/USA-road-d.NE.gr";
 		Scanner sc = new Scanner(new File(location));
 		String line0 = sc.nextLine();// c 9th DIMACS Implementation Challenge: Shortest Paths
 		String line1 = sc.nextLine();// c 9th DIMACS Implementation Challenge: Shortest Paths
@@ -23,7 +23,11 @@ public class AlgoComparison {
 		String[] line4Split = line4.split(" ");
 
 		WeightedGraph.Graph searchSpace = new WeightedGraph.Graph(Integer.parseInt(line4Split[2]) + 1);
+		int ii = 0;
 		while (sc.hasNextLine()) {
+			if(ii++%10000==0) {
+				//System.out.println(ii);
+			}
 			String line = sc.nextLine();
 			String[] line_S = line.split(" ");
 			int source = Integer.parseInt(line_S[1]);
@@ -31,7 +35,7 @@ public class AlgoComparison {
 			int val = Integer.parseInt(line_S[3]);
 			searchSpace.addEdge(source, dest, val);
 		}
-		String location_lat = "/Users/jarredparrett/Desktop/USA-road-d.NY.co";
+		String location_lat = "/Users/jarredparrett/Desktop/USA-road-d.NE.co";
 		Scanner sc2 = new Scanner(new File(location_lat));
 		String line_0 = sc2.nextLine();// c 9th DIMACS Implementation Challenge: Shortest Paths
 		String line_1 = sc2.nextLine();// c 9th DIMACS Implementation Challenge: Shortest Paths
@@ -44,6 +48,10 @@ public class AlgoComparison {
 		int arrLen = Integer.parseInt(line4Split[2]);
 		Point[] pointLocations = new Point[arrLen + 1];
 		while (sc2.hasNextLine()) {
+
+			if(ii++%10000==0) {
+				//System.out.println(ii);
+			}
 			String cur = sc2.nextLine();
 			String[] curSplit = cur.split(" ");
 			int point = Integer.parseInt(curSplit[1]);
@@ -59,18 +67,21 @@ public class AlgoComparison {
 		System.out.println("Start " + start);
 		for (int i = 0; i < 50; i++) {
 			int end = rand.nextInt((arrLen) + 1) + 0;
-			System.out.println("End " + end);
-			long[] outBFS = breathFirstSearch(start, end, searchSpace);
-			long[] outBi = biDirectionalSearch(start, end, searchSpace);
+			System.out.println(dijkstraGraphSearch(start, end, searchSpace)[end]);
+			//System.out.println("End " + end);
+			//long[] outBFS = breathFirstSearch(start, end, searchSpace);
+			//long[] outBi = biDirectionalSearch(start, end, searchSpace);
+			//System.out.println("BFS 0 " + outBFS[0] + " BFS 1 " + outBFS[1] + " \nBi 0 " + outBi[0]
+			//		+ " Out Bi 1 " + outBi[1]);
 			//long[] dij = dijkstraGraphSearch(start, 0, searchSpace);
-			long[] aStarBi =  aStarGraphSearchBi(start, end, searchSpace, pointLocations);
-			long[] aStarBiOther = aStarGraphSearchBiApproach(start,end, searchSpace, pointLocations);
-			System.out.println("BFS 0 " + outBFS[0] + " BFS 1 " + outBFS[1] + " \nBi 0 " + outBi[0]
-					+ " Out Bi 1 " + outBi[1]);
 			long[] outA = aStarGraphSearch(start, end, searchSpace, pointLocations);
 			System.out.println("Astar 0 " + outA[0] + " Astar 1 " + outA[1] + " Astar 2 " + outA[2]);
-			System.out.println("AstarBi 0 " + aStarBi[0] + " AstarBi 1 " + aStarBi[1]);
-			System.out.println("AstarBiOther 0 " + aStarBiOther[0] + " AstarBiOther 1 " + aStarBiOther[1]);
+			//long[] aStarBi =  aStarGraphSearchBi(start, end, searchSpace, pointLocations);
+			//System.out.println("AstarBi 0 " + aStarBi[0] + " AstarBi 1 " + aStarBi[1]);
+			//long[] aStarBiOther = aStarGraphSearchBiApproach(start,end, searchSpace, pointLocations);
+			//System.out.println("AstarBiOther 0 " + aStarBiOther[0] + " AstarBiOther 1 " + aStarBiOther[1]);
+			
+			
 		}
 
 		writer.close();
@@ -203,7 +214,7 @@ public class AlgoComparison {
 	 */
 	static long[] dijkstraGraphSearch(int start, int destination, WeightedGraph.Graph searchSpace) {
 		HashSet<Integer> visitedCheck = new HashSet<Integer>();
-		visitedCheck.add(start);
+		
 		long minEdge[] = new long[searchSpace.verticies];
 		for (int i = 0; i < minEdge.length; i++) {
 			minEdge[i] = Integer.MAX_VALUE;
@@ -214,17 +225,20 @@ public class AlgoComparison {
 		pq.add(vertStart);
 		while (pq.size() != 0) {
 			Vertex cur = pq.poll();
-			Iterator<WeightedGraph.Edge> i = searchSpace.adjList[cur.node].listIterator();
-			while (i.hasNext()) {
-				WeightedGraph.Edge curEdge = i.next();
+			if(visitedCheck.contains(cur.node)) {
+				continue;
+			}
+			visitedCheck.add(cur.node);
+			minEdge[cur.node] = cur.distance;
+
+			if(cur.node == destination) {
+				return minEdge;
+			}
+			for (WeightedGraph.Edge curEdge :searchSpace.adjList[cur.node]) {
+				
 				long pathDist = curEdge.weight + minEdge[curEdge.source];
-				if (pathDist < minEdge[curEdge.destination]) {
-					minEdge[curEdge.destination] = pathDist;
-				}
-				if(minEdge[destination] != Integer.MAX_VALUE) {
-					return minEdge;
-				}
-				pq.add(new Vertex(curEdge.destination, minEdge[curEdge.destination], cur));
+				
+				pq.add(new Vertex(curEdge.destination, pathDist, cur));
 			}
 		}
 		return minEdge;
